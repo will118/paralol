@@ -1,4 +1,5 @@
 var http = require('http');
+var fs = require('fs');
 
 var server = 'http://192.168.1.65/';
 
@@ -20,7 +21,11 @@ function getFileData(filename) {
 function addDownloadJob(data) {
   var job = createDownloadJob(data);
   if (job && job.chunks) {
-    
+    job.chunks.forEach(function(x, i) {
+      x.file = job.name;
+      x.part = i;
+      download(x);
+    });
   }
 }
 
@@ -35,6 +40,13 @@ function createDownloadJob(data) {
     });
   }
   return data;
+}
+
+function download(chunk) {
+  var file = fs.createWriteStream(chunk.part + chunk.file);
+  http.get(server + 'chunk/' + chunk.file + '/' + chunk.start + '/' + chunk.end, function(response) {
+    response.pipe(file);
+  });
 }
 
 function getChunkSizes(totalSize, numberOfChunks) {
