@@ -1,5 +1,5 @@
 {
-  "name": "paralolly",
+  "name": "paralol",
   "version": "1.0.0",
   "description": "",
   "main": "server.js",
@@ -9,14 +9,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/will118/paralolly.git"
+    "url": "git+https://github.com/will118/paralol.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/will118/paralolly/issues"
+    "url": "https://github.com/will118/paralol/issues"
   },
-  "homepage": "https://github.com/will118/paralolly#readme",
+  "homepage": "https://github.com/will118/paralol#readme",
   "dependencies": {
     "body-parser": "^1.12.3",
     "express": "^4.12.3"
