@@ -1,5 +1,6 @@
 var http = require('http');
 var fs = require('fs');
+var co = require('co');
 
 var server = 'http://192.168.1.65/';
 
@@ -21,11 +22,37 @@ function getFileData(filename) {
 function addDownloadJob(data) {
   var job = createDownloadJob(data);
   if (job && job.chunks) {
-    job.chunks.forEach(function(x, i) {
+    var promises = job.chunks.map(function(x, i) {
       x.file = job.name;
       x.part = i;
-      download(x);
+      return download(x);
     });
+    co(function *(){
+      var res = yield promises;
+      joinChunks(res);
+    });
+  }
+}
+
+function joinChunks(chunks) {
+  if (chunks[0]) {
+    var outStream = fs.createWriteStream(chunks[0].name);
+    function join(xs) {
+      if (xs) {
+        var inStream = fs.createReadStream(xs[0].path);
+        inStream.on('end', function() {
+          if (xs.length == 1) {
+            outStream.end();
+            chunks.forEach(function(x) { fs.unlink(x.path); });
+            console.log('File downloaded:', xs[0].name);
+          } else {
+            join(xs.slice(1));
+          }
+        });
+      }
+      inStream.pipe(outStream, {end: false});
+    }
+    join(chunks);
   }
 }
 
@@ -43,9 +70,15 @@ function createDownloadJob(data) {
 }
 
 function download(chunk) {
-  var file = fs.createWriteStream(chunk.part + chunk.file);
-  http.get(server + 'chunk/' + chunk.file + '/' + chunk.start + '/' + chunk.end, function(response) {
-    response.pipe(file);
+  var path = chunk.file + '_' + chunk.part;
+  var file = fs.createWriteStream(path);
+  return new Promise(function(resolve, reject) {
+    http.get(server + 'chunk/' + chunk.file + '/' + chunk.start + '/' + chunk.end, function(response) {
+      response.pipe(file);
+      response.on('end', function() {
+        resolve({part: chunk.part, name: chunk.file, path: path});
+      });
+    });
   });
 }
 
@@ -66,6 +99,5 @@ function getChunkSizes(totalSize, numberOfChunks) {
 
   return [totalSize];
 }
-
 
 getFileData('malca.mp3');

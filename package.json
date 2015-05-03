@@ -19,6 +19,7 @@
   "homepage": "https://github.com/will118/paralol#readme",
   "dependencies": {
     "body-parser": "^1.12.3",
+    "co": "^4.5.2",
     "express": "^4.12.3"
   }
 }
