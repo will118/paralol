@@ -1,27 +1,10 @@
-var express = require('express');
 var bodyParser = require('body-parser')
-var crypto = require('crypto');
+var express = require('express');
+var hash = require('./hash');
 var fs = require('fs');
 var app = express();
 
 app.use(bodyParser.json());
-
-function getHash(filePath, cb) {
-  fs.exists(filePath, function(exists) {
-    if (exists) {
-      var fd = fs.createReadStream(filePath);
-      var hash = crypto.createHash('sha1');
-      hash.setEncoding('hex');
-      fd.on('end', function() {
-        hash.end();
-        cb(hash.read());
-      });
-      fd.pipe(hash);
-    } else {
-      cb(null);
-    }
-  });
-}
 
 function getPath(file) {
   if (file) {
@@ -40,7 +23,7 @@ app.get('/:file', function(req, res) {
   fs.exists(filePath, function (exists) {
     if (exists) {
       fs.stat(filePath, function(err, stats) {
-        getHash(filePath, function(sha1) {
+        hash.get(filePath, function(sha1) {
           res.send({
             size: stats.size,
             name: req.params.file,

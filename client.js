@@ -1,3 +1,4 @@
+var hash = require('./hash');
 var http = require('http');
 var fs = require('fs');
 var co = require('co');
@@ -29,22 +30,29 @@ function addDownloadJob(data) {
     });
     co(function *(){
       var res = yield promises;
-      joinChunks(res);
+      joinChunks(res, data.hash);
     });
   }
 }
 
-function joinChunks(chunks) {
+function joinChunks(chunks, serverSha1) {
   if (chunks[0]) {
-    var outStream = fs.createWriteStream(chunks[0].name);
+    var filename = chunks[0].name;
+    var outStream = fs.createWriteStream(filename);
     function join(xs) {
       if (xs) {
         var inStream = fs.createReadStream(xs[0].path);
         inStream.on('end', function() {
           if (xs.length == 1) {
             outStream.end();
-            chunks.forEach(function(x) { fs.unlink(x.path); });
-            console.log('File downloaded:', xs[0].name);
+            hash.get(filename, function(sha1) {
+              if (sha1 === serverSha1) {
+                chunks.forEach(function(x) { fs.unlink(x.path); });
+                console.log('File downloaded:', filename);
+              } else {
+                console.log('Corrupt merged file:', serverSha1, sha1);
+              }
+            });
           } else {
             join(xs.slice(1));
           }
@@ -62,7 +70,8 @@ function createDownloadJob(data) {
     var position = 0;
     data.chunks = chunkSizes.map(function(x) {
       var chunk = {start: position, end: position + x};
-      position = position + x;
+      position = position + x + 1;
+      console.log(chunk);
       return chunk;
     });
   }
