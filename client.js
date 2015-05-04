@@ -3,7 +3,7 @@ var http = require('http');
 var fs = require('fs');
 var co = require('co');
 
-var server = 'http://192.168.1.65';
+var server = '192.168.1.65';
 
 var downloadIps = [
   '192.168.1.80',
@@ -90,6 +90,7 @@ function download(chunk) {
         method: 'GET',
         localAddress: downloadIps[0]
     };
+    console.log(options.path);
 
     var req = http.request(options, function(res) {
       res.pipe(file, {end: true});
