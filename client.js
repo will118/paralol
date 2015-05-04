@@ -7,7 +7,7 @@ var server = 'http://192.168.1.65';
 
 var downloadIps = [
   '192.168.1.80',
-  '192.168.1.312312'
+  '192.168.1.93'
 ]
 var connectionCount = downloadIps.length;
 
@@ -93,7 +93,7 @@ function reqFunc(file, path, chunk, resolve) {
   var req = http.request(options, function(res) {
     res.pipe(file, {end: true});
     res.on('end', function() {
-      console.log('Fetched ' + chunk.path + ' on ' + ip);
+      console.log('Fetched ' + path + ' on ' + ip);
       resolve({part: chunk.part, name: chunk.file, path: path});
     });
   });
