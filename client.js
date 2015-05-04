@@ -81,17 +81,19 @@ function createDownloadJob(data) {
 
 function reqFunc(file, path, chunk, resolve) {
   console.log(chunk);
+  var ip = downloadIps[chunk.part % connectionCount];
   var options = {
       host: server.replace(/http:\/\//, ""),
       port: 80,
       path: '/chunk/' + chunk.file + '/' + chunk.start + '/' + chunk.end,
       method: 'GET',
-      localAddress: downloadIps[0]
+      localAddress: ip
   };
 
   var req = http.request(options, function(res) {
     res.pipe(file, {end: true});
     res.on('end', function() {
+      console.log('Fetched ' + chunk.path + ' on ' + ip);
       resolve({part: chunk.part, name: chunk.file, path: path});
     });
   });
