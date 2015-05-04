@@ -50,7 +50,7 @@ function joinChunks(chunks, serverSha1) {
             hash.get(filename, function(sha1) {
               if (sha1 === serverSha1) {
                 chunks.forEach(function(x) { fs.unlink(x.path); });
-                console.log('File downloaded:', filename, '\nSHA1 verified:', sha1, '\nFilesize:', xs[0].end);
+                console.log('File downloaded:', filename, '\nSHA1 verified:', sha1);
               } else {
                 console.log('Corrupt merged file:', filename, '\nHashes:', serverSha1, sha1);
               }
@@ -79,20 +79,8 @@ function createDownloadJob(data) {
   return data;
 }
 
-function getFunc(file, path, chunk, resolve) {
-  console.log('getFunc()');
-  http.get(server + '/chunk/' + chunk.file + '/' + chunk.start + '/' + chunk.end, function(response) {
-    response.pipe(file);
-    response.on('end', function() {
-      resolve({part: chunk.part, name: chunk.file, path: path});
-    });
-  }).on('error', function(e) {
-    console.log(e);
-  });
-}
-
 function reqFunc(file, path, chunk, resolve) {
-  console.log('reqFunc()');
+  console.log(chunk);
   var options = {
       host: server.replace(/http:\/\//, ""),
       port: 80,
