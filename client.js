@@ -3,14 +3,16 @@ var http = require('http');
 var fs = require('fs');
 var co = require('co');
 
-var server = 'http://192.168.1.65/';
+var server = 'http://192.168.1.65';
 
-var masterIp = '192.168.1.80'
-var extraIps = ['192.168.1.312312']
-var connectionCount = extraIps.length + 1;
+var downloadIps = [
+  '192.168.1.80',
+  '192.168.1.312312'
+]
+var connectionCount = downloadIps.length;
 
 function getFileData(filename) {
-  http.get(server + filename, function(res) {
+  http.get(server + '/' + filename, function(res) {
     res.setEncoding('utf8');
     res.on('data', function (json) {
       addDownloadJob(JSON.parse(json));
@@ -71,7 +73,6 @@ function createDownloadJob(data) {
     data.chunks = chunkSizes.map(function(x) {
       var chunk = {start: position, end: position + x};
       position = position + x + 1;
-      console.log(chunk);
       return chunk;
     });
   }
@@ -82,12 +83,27 @@ function download(chunk) {
   var path = chunk.file + '_' + chunk.part;
   var file = fs.createWriteStream(path);
   return new Promise(function(resolve, reject) {
-    http.get(server + 'chunk/' + chunk.file + '/' + chunk.start + '/' + chunk.end, function(response) {
-      response.pipe(file);
-      response.on('end', function() {
+    var options = {
+        host: server,
+        port: 80,
+        path: '/chunk/' + chunk.file + '/' + chunk.start + '/' + chunk.end,
+        method: 'GET',
+        localAddress: downloadIps[0]
+    };
+
+    var req = http.request(options, function(res) {
+      res.pipe(file, {end: true});
+      res.on('end', function() {
         resolve({part: chunk.part, name: chunk.file, path: path});
       });
     });
+
+    req.on('error', function(err) {
+      console.log(err);
+      console.log('Error downloading chunk:', path);
+    });
+
+    req.end();
   });
 }
 

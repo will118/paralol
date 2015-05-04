@@ -23,13 +23,17 @@ app.get('/:file', function(req, res) {
   fs.exists(filePath, function (exists) {
     if (exists) {
       fs.stat(filePath, function(err, stats) {
-        hash.get(filePath, function(sha1) {
-          res.send({
-            size: stats.size,
-            name: req.params.file,
-            hash: sha1
+        if (!err) {
+          hash.get(filePath, function(sha1) {
+            res.send({
+              size: stats.size,
+              name: req.params.file,
+              hash: sha1
+            });
           });
-        });
+        } else {
+          fileNotFound(res);
+        }
       });
     } else {
       fileNotFound(res);
