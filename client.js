@@ -50,9 +50,9 @@ function joinChunks(chunks, serverSha1) {
             hash.get(filename, function(sha1) {
               if (sha1 === serverSha1) {
                 chunks.forEach(function(x) { fs.unlink(x.path); });
-                console.log('File downloaded:', filename);
+                console.log('File downloaded:', filename, '\nSHA1 verified:', sha1, '\nFilesize:', xs[0].end);
               } else {
-                console.log('Corrupt merged file:', serverSha1, sha1);
+                console.log('Corrupt merged file:', filename, '\nHashes:', serverSha1, sha1);
               }
             });
           } else {
