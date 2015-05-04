@@ -3,7 +3,7 @@ var http = require('http');
 var fs = require('fs');
 var co = require('co');
 
-var server = '192.168.1.65';
+var server = 'http://192.168.1.65';
 
 var downloadIps = [
   '192.168.1.80',
@@ -79,33 +79,47 @@ function createDownloadJob(data) {
   return data;
 }
 
+function getFunc(file, path, chunk, resolve) {
+  console.log('getFunc()');
+  http.get(server + '/chunk/' + chunk.file + '/' + chunk.start + '/' + chunk.end, function(response) {
+    response.pipe(file);
+    response.on('end', function() {
+      resolve({part: chunk.part, name: chunk.file, path: path});
+    });
+  }).on('error', function(e) {
+    console.log(e);
+  });
+}
+
+function reqFunc(file, path, chunk, resolve) {
+  console.log('reqFunc()');
+  var options = {
+      host: server.replace(/http:\/\//, ""),
+      port: 80,
+      path: '/chunk/' + chunk.file + '/' + chunk.start + '/' + chunk.end,
+      method: 'GET',
+      localAddress: downloadIps[0]
+  };
+
+  var req = http.request(options, function(res) {
+    res.pipe(file, {end: true});
+    res.on('end', function() {
+      resolve({part: chunk.part, name: chunk.file, path: path});
+    });
+  });
+
+  req.on('error', function(err) {
+    console.log(err);
+    console.log('Error downloading chunk:', path);
+  });
+
+  req.end();
+}
+
 function download(chunk) {
   var path = chunk.file + '_' + chunk.part;
   var file = fs.createWriteStream(path);
-  return new Promise(function(resolve, reject) {
-    var options = {
-        host: server,
-        port: 80,
-        path: '/chunk/' + chunk.file + '/' + chunk.start + '/' + chunk.end,
-        method: 'GET',
-        localAddress: downloadIps[0]
-    };
-    console.log(options.path);
-
-    var req = http.request(options, function(res) {
-      res.pipe(file, {end: true});
-      res.on('end', function() {
-        resolve({part: chunk.part, name: chunk.file, path: path});
-      });
-    });
-
-    req.on('error', function(err) {
-      console.log(err);
-      console.log('Error downloading chunk:', path);
-    });
-
-    req.end();
-  });
+  return new Promise(function(resolve, reject) { reqFunc(file, path, chunk, resolve); });
 }
 
 function getChunkSizes(totalSize, numberOfChunks) {
