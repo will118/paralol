@@ -20,7 +20,6 @@ function fileNotFound(res) {
 
 app.get('/:file', function(req, res) {
   var filePath = getPath(req.params.file);
-  console.log('Stat request for:', filePath);
   fs.exists(filePath, function (exists) {
     if (exists) {
       fs.stat(filePath, function(err, stats) {
